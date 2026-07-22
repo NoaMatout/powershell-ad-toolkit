@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
         shell: ${{ matrix.shell }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install test dependencies
         run: |
@@ -43,7 +43,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: testresults-${{ matrix.shell }}
           path: testresults-${{ matrix.shell }}.xml
@@ -53,7 +53,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install PSScriptAnalyzer
         shell: pwsh
@@ -76,7 +76,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Validate manifest and exports
         shell: pwsh
