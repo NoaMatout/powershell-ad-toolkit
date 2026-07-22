@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Pester (${{ matrix.shell }})
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # 5.1 is what a domain-joined admin workstation actually has; 7 is what anyone
+        # installing this today would use. The module has to work on both.
+        shell: [powershell, pwsh]
+
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -MinimumVersion 5.5.0 -Scope CurrentUser -Force -SkipPublisherCheck
+
+      - name: Run tests
+        run: |
+          $config = New-PesterConfiguration
+          $config.Run.Path = './tests'
+          $config.Run.Exit = $true
+          $config.Output.Verbosity = 'Detailed'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = "testresults-${{ matrix.shell }}.xml"
+          Invoke-Pester -Configuration $config
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testresults-${{ matrix.shell }}
+          path: testresults-${{ matrix.shell }}.xml
+
+  analyze:
+    name: PSScriptAnalyzer
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+
+      - name: Analyze
+        shell: pwsh
+        run: |
+          $findings = Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error,Warning
+          if ($findings) {
+              $findings | Format-Table RuleName, ScriptName, Line, Message -AutoSize -Wrap
+              throw "PSScriptAnalyzer reported $($findings.Count) finding(s)."
+          }
+          Write-Host 'PSScriptAnalyzer: clean.'
+
+  manifest:
+    name: Manifest
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate manifest and exports
+        shell: pwsh
+        run: |
+          $manifest = Test-ModuleManifest -Path ./ADToolkit.psd1
+          Write-Host "Manifest OK: $($manifest.Name) $($manifest.Version)"
+
+          # The manifest lists exports explicitly rather than wildcarding them, which is
+          # faster to import but drifts silently when a function is added. Catch the drift.
+          Import-Module ./ADToolkit.psd1 -Force
+          $exported = (Get-Command -Module ADToolkit).Name | Sort-Object
+          $onDisk = (Get-ChildItem ./Public/*.ps1).BaseName | Sort-Object
+
+          if (Compare-Object $exported $onDisk) {
+              Compare-Object $exported $onDisk |
+                  Format-Table @{ N = 'Function'; E = { $_.InputObject } },
+                               @{ N = 'Where'; E = { if ($_.SideIndicator -eq '=>') { 'on disk, not exported' } else { 'exported, no file' } } }
+              throw 'Exported functions do not match the files in Public/.'
+          }
+          Write-Host 'Exports match Public/.'

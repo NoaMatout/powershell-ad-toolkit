@@ -1,0 +1,34 @@
+
+DSInternals Password Auditing Report
+EXAMPLE
+
+Passwords of these accounts are stored using reversible encryption:
+
+LM hashes of passwords of these accounts are present:
+
+These accounts have no password set:
+  EXAMPLE\svc_legacy
+
+Passwords of these accounts have been found in the dictionary:
+  EXAMPLE\alice
+  EXAMPLE\bob
+
+These groups of accounts have the same passwords:
+  Group 1:
+    EXAMPLE\svc_backup
+    EXAMPLE\svc_monitor
+  Group 2:
+    EXAMPLE\WS-001$
+    EXAMPLE\WS-002$
+    EXAMPLE\WS-003$
+
+These user accounts have the SamAccountName as password:
+
+Kerberos AES keys are missing from these accounts:
+  EXAMPLE\WS-001$
+
+These accounts are susceptible to the Kerberoasting attack:
+  EXAMPLE\svc_sql
+
+Passwords of these accounts will never expire:
+  EXAMPLE\svc_backup

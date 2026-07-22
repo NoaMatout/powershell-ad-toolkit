@@ -1,0 +1,30 @@
+# Audit output -- never commit these. A password-quality report names every account in the
+# domain whose password is weak, shared or absent.
+archive/
+*.report.txt
+audit-*.txt
+!tests/fixtures/audit-*.txt
+ad_hc_*.xml
+ad_*.html
+*_ADReconReport*/
+PingCastle*.xml
+
+# Third-party tooling, not ours to redistribute
+PingCastle*.exe
+PingCastle*.pdb
+ADRecon.ps1
+PowerHunt*.psm1
+DSInternals/
+pwnedpasswords.txt
+*.dll
+
+# Test output
+testresults*.xml
+coverage.xml
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
