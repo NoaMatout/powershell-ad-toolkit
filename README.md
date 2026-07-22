@@ -27,14 +27,26 @@ text file identical to the last one except in ways nobody has time to spot.
 
 ## Status
 
-Version 0.1.0. The password-audit half is implemented and tested; the rest of the surface
-described under [Roadmap](#roadmap) is not written yet. Nothing here is a stub — what ships,
-works.
+Version 0.2.0. The password-audit workflow is complete end to end; the collection side and
+the other assessment tools are still on the [roadmap](#roadmap). Nothing here is a stub —
+what ships, works.
 
 | Function | Purpose |
 | --- | --- |
+| `Get-PasswordAuditArchive` | Resolves dated archives in a directory and parses them, reading zips in memory |
 | `ConvertFrom-PasswordQualityReport` | Parses an archived DSInternals `Test-PasswordQuality` report into finding objects |
 | `Compare-PasswordAudit` | Classifies findings across two reports as New, Resolved or Persisting |
+| `ConvertTo-AuditReport` | Renders a comparison as HTML or Markdown |
+
+The whole weekly job, from a folder of archives to a mail body:
+
+```powershell
+$reports = Get-PasswordAuditArchive -Path D:\audits -Latest 2
+
+Compare-PasswordAudit -ReferenceReport $reports[0] -DifferenceReport $reports[-1] |
+    ConvertTo-AuditReport -Title 'Weekly AD password review' |
+    Out-File .\report.html -Encoding utf8
+```
 
 ## Install
 
@@ -110,15 +122,31 @@ parameters, never defaults. The test fixtures are synthetic.
 exists weeks later, so it is treated as the input format rather than something to be
 replaced.
 
+### The archive is never written to disk
+
+A zipped report is read as a stream. Expanding it to a temporary directory — the obvious
+implementation, and the one I wrote first in production — leaves a plaintext list of every
+weak and shared password in the domain in the profile of whoever ran the job, and leaves it
+there permanently if the script fails before its cleanup step. That is a worse outcome than
+any convenience it buys.
+
+The date is taken from the file name rather than the file's write time, too: a copied or
+restored archive keeps its contents but not its timestamp, and an audit dated wrongly
+compares wrongly.
+
+### Rendering is separate from sending
+
+`ConvertTo-AuditReport` returns a string. It does not know your mail relay, and it should
+not — that belongs to the caller. The HTML carries its styling inline rather than in a
+`<style>` block, because Outlook on the web and Gmail both strip document-level stylesheets
+and would otherwise render the report as unstyled text.
+
 ## Roadmap
 
 Ordered by how much I want them, not by when they will land:
 
 - `Invoke-PasswordAudit` — wrap the DSInternals collection so the archive is produced with a
   consistent name and layout
-- `Get-PasswordAuditArchive` — resolve the two most recent archives in a directory, including
-  zipped ones, so the weekly comparison is a one-liner
-- `New-AuditReport` — render a comparison as Markdown or HTML for mailing
 - `Invoke-ADHealthCheck` — drive PingCastle and expose its XML as objects
 - `Invoke-ShareAudit` — drive PowerHunt for SMB share exposure
 

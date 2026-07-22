@@ -1,6 +1,6 @@
 @{
     RootModule        = 'ADToolkit.psm1'
-    ModuleVersion     = '0.1.0'
+    ModuleVersion     = '0.2.0'
     GUID              = 'b7f4c2a1-9d3e-4f68-8a52-6c1e0b4d7a93'
     Author            = 'Noa Matout'
     Copyright         = '(c) 2026 Noa Matout. Released under the MIT License.'
@@ -9,8 +9,10 @@
     PowerShellVersion = '5.1'
 
     FunctionsToExport = @(
-        'ConvertFrom-PasswordQualityReport'
         'Compare-PasswordAudit'
+        'ConvertFrom-PasswordQualityReport'
+        'Get-PasswordAuditArchive'
+        'ConvertTo-AuditReport'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
@@ -30,7 +32,8 @@
             )
             LicenseUri   = 'https://github.com/NoaMatout/powershell-ad-toolkit/blob/main/LICENSE'
             ProjectUri   = 'https://github.com/NoaMatout/powershell-ad-toolkit'
-            ReleaseNotes = 'Initial release: password-quality report parsing and week-over-week comparison.'
+            ReleaseNotes = 'Adds archive resolution (in-memory zip reading) and HTML/Markdown rendering, completing the weekly workflow.'
         }
     }
 }
+
